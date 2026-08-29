@@ -1,5 +1,10 @@
 import requests
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class Extract:
     """
@@ -7,6 +12,10 @@ class Extract:
     IBGE (SIDRA). O método `agregado` é genérico e pode ser reutilizado
     para qualquer agregado do IBGE; `pnadc` é um atalho já configurado
     para o agregado 4093 (PNAD Contínua).
+
+    Também é capaz de reler, de uma coleção do MongoDB, dados que já
+    foram carregados anteriormente por `Load.load_mongo`, para alimentar
+    a etapa de transformação do pipeline.
     """
 
     UFS = {
@@ -76,6 +85,12 @@ class Extract:
 
     def __init__(self):
         self.base_url = "https://servicodados.ibge.gov.br/api/v3/agregados"
+        self.mongo_uri = os.getenv("MONGODB_URI")
+        self.client = MongoClient(self.mongo_uri, server_api=ServerApi("1"))
+
+    def close(self) -> None:
+        """Encerra a conexão com o MongoDB."""
+        self.client.close()
 
     def agregado(
         self,
@@ -107,6 +122,8 @@ class Extract:
         )
         response = requests.get(url)
         response.raise_for_status()
+
+        print(f"Dados extraídos com sucesso da API do IBGE (agregado {agregado_id})!")
         return response.json()
 
     def pnadc(
@@ -139,3 +156,17 @@ class Extract:
             periodo_inicio=periodo_inicio,
             periodo_fim=periodo_fim,
         )
+    
+    def extract_collection_from_mongo(self, db_name: str, collection_name: str) -> list[dict]:
+        """
+        Busca todos os documentos de uma coleção do MongoDB.
+
+        Atributos:
+            db_name: nome do banco de dados no MongoDB
+            collection_name: nome da coleção a ser lida
+        """
+        collection = self.client[db_name][collection_name]
+        documentos = list(collection.find())
+
+        print(f"Dados lidos com sucesso da coleção '{collection_name}'!")
+        return documentos

@@ -2,3 +2,4 @@ black
 requests
 pymongo
 python-dotenv
+pandas
