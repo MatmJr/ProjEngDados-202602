@@ -19,6 +19,9 @@ def main():
     print("Etapa 3: Salvando no SQLite!")
     ld.load_sqlite(df=df)
 
+    print("Etapa 4: Salvando no NeonDB!")
+    ld.load_neon(df, "pnadc")
+
     ext.close()
 
 

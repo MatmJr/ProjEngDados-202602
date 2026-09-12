@@ -4,9 +4,9 @@ import os
 from dotenv import load_dotenv
 import sqlite3
 import pandas as pd
+from sqlalchemy import create_engine
 
 load_dotenv()
-
 
 class Load:
     """
@@ -72,3 +72,11 @@ class Load:
         conn.close()
 
         print(f"Dados salvos com sucesso na tabela '{nome_tabela}' do banco '{nome_banco}'!")
+
+    def load_neon(self, df: pd.DataFrame, nome_tabela: str) -> None:
+
+        engine = create_engine(os.getenv("DATABASE_URL"))
+        df.to_sql(nome_tabela, engine, if_exists="replace", index=False)
+        engine.dispose()
+
+        print(f"Dados salvos com sucesso na tabela '{nome_tabela}' do Neon!")
