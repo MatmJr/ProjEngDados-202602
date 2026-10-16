@@ -131,7 +131,7 @@ class Extract:
         variavel: int,
         estado: int,
         periodo_inicio: str = "201201",
-        periodo_fim: str = "202602",
+        periodo_fim: str = "202603",
     ) -> list[dict]:
         """
         Busca, no agregado 4093 (PNAD Contínua), a série histórica de uma
