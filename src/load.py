@@ -12,7 +12,8 @@ class Load:
     """
     Responsável por persistir os dados do pipeline: o resultado bruto da
     extração em um arquivo JSON local ou em uma coleção do MongoDB, e o
-    resultado já transformado em uma tabela de um banco SQLite.
+    resultado já transformado em uma tabela de um banco SQLite local ou
+    de um banco PostgreSQL no Neon.
     """
 
     def __init__(self):
@@ -74,7 +75,14 @@ class Load:
         print(f"Dados salvos com sucesso na tabela '{nome_tabela}' do banco '{nome_banco}'!")
 
     def load_neon(self, df: pd.DataFrame, nome_tabela: str) -> None:
+        """
+        Salva um DataFrame em uma tabela do banco PostgreSQL no Neon, usando
+        a string de conexão da variável de ambiente `DATABASE_URL`.
 
+        Atributos:
+            df: DataFrame a ser salvo (ex.: retorno de `Transform.transform_pnadc`)
+            nome_tabela: nome da tabela onde os dados serão gravados
+        """
         engine = create_engine(os.getenv("DATABASE_URL"))
         df.to_sql(nome_tabela, engine, if_exists="replace", index=False)
         engine.dispose()

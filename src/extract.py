@@ -136,7 +136,7 @@ class Extract:
         """
         Busca, no agregado 4093 (PNAD Contínua), a série histórica de uma
         variável para uma UF, em um período (por padrão, entre 2012-01 e
-        2026-02).
+        2026-03).
 
         Atributos:
             variavel: código da variável do agregado 4093 (ver `Extract.VARIAVEIS_PNADC`)
