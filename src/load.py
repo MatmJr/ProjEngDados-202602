@@ -1,12 +1,10 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-import os
-from dotenv import load_dotenv
 import sqlite3
 import pandas as pd
 from sqlalchemy import create_engine
-
-load_dotenv()
+import src.config as config
+from datetime import datetime, timezone
 
 class Load:
     """
@@ -17,8 +15,7 @@ class Load:
     """
 
     def __init__(self):
-        self.mongo_uri = os.getenv("MONGODB_URI")
-        self.client = MongoClient(self.mongo_uri, server_api=ServerApi("1"))
+        self.client = MongoClient(config.MONGODB_URI, server_api=ServerApi("1"))
 
     def close(self) -> None:
         """Encerra a conexão com o MongoDB."""
@@ -39,7 +36,10 @@ class Load:
 
     def load_mongo(self, data: list[dict], db_name: str, collection_name: str) -> None:
         """
-        Insere o resultado da extração em uma coleção do MongoDB.
+        Insere o resultado da extração em uma coleção do MongoDB (camada
+        bronze). A coleção nunca é apagada: cada documento recebe o campo
+        `data_extracao` (data e hora da carga, em UTC), que identifica a
+        carga a que ele pertence.
 
         Atributos:
             data: lista de dicionários retornada pela API do IBGE
@@ -47,6 +47,10 @@ class Load:
             collection_name: nome da coleção onde os documentos serão inseridos
         """
         collection = self.client[db_name][collection_name]
+
+        data_extracao = datetime.now(timezone.utc)
+        for documento in data:
+            documento["data_extracao"] = data_extracao
 
         if data:
             collection.insert_many(data)
@@ -83,7 +87,7 @@ class Load:
             df: DataFrame a ser salvo (ex.: retorno de `Transform.transform_pnadc`)
             nome_tabela: nome da tabela onde os dados serão gravados
         """
-        engine = create_engine(os.getenv("DATABASE_URL"))
+        engine = create_engine(config.DATABASE_URL)
         df.to_sql(nome_tabela, engine, if_exists="replace", index=False)
         engine.dispose()
 

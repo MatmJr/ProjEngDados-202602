@@ -1,11 +1,9 @@
 from prefect import flow, task, get_run_logger
-from dotenv import load_dotenv
 from src.extract import Extract
 from src.load import Load
 from src.transform import Transform
 import pandas as pd
 
-load_dotenv()
 
 @task(retries=3, retry_delay_seconds=10)
 def extract(variavel: int, estado: int) -> list[dict]:
@@ -27,7 +25,7 @@ def transform(db_name: str, collection_name: str) -> pd.DataFrame:
     logger = get_run_logger()
     extractor = Extract()
     transformer = Transform()
-    data = extractor.extract_collection_from_mongo(db_name, collection_name)
+    data = extractor.extract_latest_from_mongo(db_name, collection_name)
     extractor.close()
     df = transformer.transform_pnadc(data)
     logger.info(f"{len(df)} linhas transformadas a partir de {db_name}.{collection_name}")

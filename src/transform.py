@@ -13,19 +13,32 @@ class Transform:
     def transform_pnadc(self, data: list[dict]) -> pd.DataFrame:
         """
         Converte o resultado bruto da API do IBGE (agregado 4093) em um
-        DataFrame com uma linha por período, pronto para carga no SQLite.
+        DataFrame com uma linha por período e sexo (Total, Homens e
+        Mulheres), pronto para carga no SQLite e no Neon. Trimestres sem
+        dado divulgado ("...") ficam como nulo.
 
         Atributos:
             data: lista de dicionários no formato retornado pela API do
                 IBGE (o mesmo salvo por `Load.load_mongo`)
         """
-        serie = data[0]["resultados"][0]["series"][0]["serie"]
+        dfs = []
 
-        df = pd.DataFrame.from_dict(serie, orient="index", columns=["valor"])
-        df.index.name = "periodo"
-        df = df.reset_index()
+        for resultado in data[0]["resultados"]:
+            categoria = resultado["classificacoes"][0]["categoria"]
+            sexo = list(categoria.values())[0]   # "Total", "Homens" ou "Mulheres"
+            serie = resultado["series"][0]["serie"]
 
-        df["valor"] = df["valor"].replace("...", "0")
+            df_sexo = pd.DataFrame.from_dict(serie, orient="index", columns=["valor"])
+            df_sexo.index.name = "periodo"
+            df_sexo = df_sexo.reset_index()
+            df_sexo["sexo"] = sexo               # nova coluna identifica a categoria
+
+            dfs.append(df_sexo)
+
+        df = pd.concat(dfs, ignore_index=True)  # empilha os 3 DataFrames
+
+
+        df["valor"] = df["valor"].replace("...", None)
         df["valor"] = df["valor"].astype(float)
 
         df["ano"] = df["periodo"].str[:4]

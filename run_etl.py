@@ -13,7 +13,7 @@ def main():
     ld.load_mongo(data, "IBGE", "PNADC")
 
     print("Etapa 2: Transformando os dados!")
-    data = ext.extract_collection_from_mongo("IBGE", "PNADC")
+    data = ext.extract_latest_from_mongo("IBGE", "PNADC")
     df = transformer.transform_pnadc(data)
 
     print("Etapa 3: Salvando no SQLite!")

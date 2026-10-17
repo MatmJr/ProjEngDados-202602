@@ -1,10 +1,8 @@
 import requests
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-import os
-from dotenv import load_dotenv
+import src.config as config
 
-load_dotenv()
 
 class Extract:
     """
@@ -85,8 +83,7 @@ class Extract:
 
     def __init__(self):
         self.base_url = "https://servicodados.ibge.gov.br/api/v3/agregados"
-        self.mongo_uri = os.getenv("MONGODB_URI")
-        self.client = MongoClient(self.mongo_uri, server_api=ServerApi("1"))
+        self.client = MongoClient(config.MONGODB_URI, server_api=ServerApi("1"))
 
     def close(self) -> None:
         """Encerra a conexão com o MongoDB."""
@@ -169,4 +166,25 @@ class Extract:
         documentos = list(collection.find())
 
         print(f"Dados lidos com sucesso da coleção '{collection_name}'!")
+        return documentos
+
+    def extract_latest_from_mongo(self, db_name: str, collection_name: str) -> list[dict]:
+        """
+        Busca, em uma coleção do MongoDB, apenas os documentos da carga mais
+        recente (maior `data_extracao`), ignorando as cargas anteriores que
+        continuam guardadas na camada bronze.
+
+        Atributos:
+            db_name: nome do banco de dados no MongoDB
+            collection_name: nome da coleção a ser lida
+        """
+        collection = self.client[db_name][collection_name]
+
+        ultimo = collection.find_one(sort=[("data_extracao", -1)])  # o mais novo
+        if ultimo is None:
+            return []
+
+        documentos = list(collection.find({"data_extracao": ultimo.get("data_extracao")}))
+
+        print(f"Dados da carga mais recente lidos com sucesso da coleção '{collection_name}'!")
         return documentos

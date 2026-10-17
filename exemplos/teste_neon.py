@@ -1,13 +1,8 @@
-import os
 import pandas as pd
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
+import src.config as config
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-engine = create_engine(DATABASE_URL)
+engine = create_engine(config.DATABASE_URL)
 
 df = pd.DataFrame(
     {
@@ -16,8 +11,8 @@ df = pd.DataFrame(
     }
 )
 
-# df.to_sql("teste_neon", engine, if_exists="replace", index=False)
-# print("Dados salvos no neondb!")
+df.to_sql("teste_neon", engine, if_exists="replace", index=False)
+print("Dados salvos no neondb!")
 
 df_show = pd.read_sql("SELECT * FROM teste_neon", engine)
 print(df_show)
